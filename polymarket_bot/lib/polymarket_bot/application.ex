@@ -8,10 +8,13 @@ defmodule PolymarketBot.Application do
     children = [
       # Database
       PolymarketBot.Repo,
-      
+
       # Data collector (collects and persists Polymarket data)
       PolymarketBot.DataCollector,
-      
+
+      # WebSocket client for real-time price updates
+      PolymarketBot.WebSocket,
+
       # HTTP server
       {Plug.Cowboy, scheme: :http, plug: PolymarketBot.Router, options: [port: 4000]}
     ]
