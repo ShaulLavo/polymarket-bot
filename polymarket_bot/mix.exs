@@ -25,7 +25,7 @@ defmodule PolymarketBot.MixProject do
       {:plug_cowboy, "~> 2.7"},
       {:jason, "~> 1.4"},
       {:req, "~> 0.5"},  # HTTP client
-      {:websockex, "~> 0.4.3"},  # WebSocket client for real-time data
+      {:websockex, "~> 0.5.1"},  # WebSocket client for real-time data
       {:signet, "~> 1.5"},  # Ethereum/EIP-712 signing (for trading later)
       {:ecto_sql, "~> 3.12"},  # Database ORM
       {:ecto_sqlite3, "~> 0.18"}  # SQLite3 adapter (simple, file-based)

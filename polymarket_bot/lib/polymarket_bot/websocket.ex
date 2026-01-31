@@ -73,7 +73,7 @@ defmodule PolymarketBot.WebSocket do
     Process.send_after(self(), :heartbeat, @heartbeat_interval)
 
     # Subscribe to any pre-configured markets
-    if length(state.subscribed_markets) > 0 do
+    if state.subscribed_markets != [] do
       message = Jason.encode!(%{
         type: "subscribe",
         channel: "market",
@@ -125,7 +125,7 @@ defmodule PolymarketBot.WebSocket do
     Logger.warning("[WebSocket] Disconnected: #{inspect(reason)}")
 
     new_attempts = state.reconnect_attempts + 1
-    delay = min(@reconnect_delay * new_attempts, 60_000)
+    delay = min(trunc(@reconnect_delay * :math.pow(2, new_attempts - 1)), 60_000)
 
     Logger.info("[WebSocket] Reconnecting in #{delay}ms (attempt #{new_attempts})")
 
@@ -140,8 +140,8 @@ defmodule PolymarketBot.WebSocket do
 
   # Private Functions
 
-  defp handle_message(%{"type" => "price_update"} = data, state) do
-    save_price_update(data)
+  defp handle_message(%{"event_type" => "price_change"} = data, state) do
+    handle_price_change(data)
     {:ok, state}
   end
 
@@ -178,6 +178,52 @@ defmodule PolymarketBot.WebSocket do
         {:ok, state}
     end
   end
+
+  # Handle Polymarket's price_change event format
+  defp handle_price_change(%{"asset_id" => asset_id, "market" => market_id, "changes" => changes, "timestamp" => ts}) do
+    # Extract the best price from changes (typically we want the most recent/relevant)
+    price = case changes do
+      [%{"price" => p} | _] -> parse_price(p)
+      _ -> nil
+    end
+
+    if price do
+      timestamp = parse_timestamp(parse_timestamp_string(ts))
+
+      attrs = %{
+        market_id: market_id,
+        token_id: asset_id,
+        yes_price: price,
+        no_price: 1.0 - price,
+        timestamp: timestamp
+      }
+
+      changeset = PriceSnapshot.changeset(%PriceSnapshot{}, attrs)
+
+      case Repo.insert(changeset) do
+        {:ok, _snapshot} ->
+          Logger.debug("[WebSocket] Saved price change for market #{market_id}")
+          :ok
+
+        {:error, changeset} ->
+          Logger.warning("[WebSocket] Failed to save price change: #{inspect(changeset.errors)}")
+          :error
+      end
+    else
+      :ok
+    end
+  end
+
+  defp handle_price_change(_), do: :ok
+
+  # Parse timestamp string (Polymarket sends as string of milliseconds)
+  defp parse_timestamp_string(ts) when is_binary(ts) do
+    case Integer.parse(ts) do
+      {int, _} -> int
+      :error -> ts
+    end
+  end
+  defp parse_timestamp_string(ts), do: ts
 
   defp extract_price_data(%{"market" => market_id, "price" => price} = data) do
     {:ok, %{
@@ -247,7 +293,10 @@ defmodule PolymarketBot.WebSocket do
     end
   end
   defp parse_timestamp(ts) when is_integer(ts) do
-    DateTime.from_unix!(ts, :millisecond)
+    case DateTime.from_unix(ts, :millisecond) do
+      {:ok, dt} -> dt
+      {:error, _} -> DateTime.utc_now()
+    end
   end
   defp parse_timestamp(_), do: DateTime.utc_now()
 end
