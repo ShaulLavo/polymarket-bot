@@ -181,8 +181,8 @@ defmodule PolymarketBot.Backtester do
       {final_state, signals, equity_state} =
         data
         |> Enum.reduce({strategy_state, [], initial_equity_state}, fn snapshot,
-                                                                       {state, signals,
-                                                                        equity_state} ->
+                                                                      {state, signals,
+                                                                       equity_state} ->
           price_data = %{
             timestamp: snapshot.timestamp,
             yes_price: snapshot.yes_price,
