@@ -175,10 +175,14 @@ defmodule PolymarketBot.Backtester do
     # Initialize strategy
     with {:ok, strategy_state} <- config.strategy.init(config.strategy_config) do
       # Run through all price data
-      {final_state, signals, equity_curve} =
+      # equity_state: {equity_list, position, entry_price, position_size}
+      initial_equity_state = {[config.initial_capital], nil, nil, 0.0}
+
+      {final_state, signals, equity_state} =
         data
-        |> Enum.reduce({strategy_state, [], [config.initial_capital]}, fn snapshot,
-                                                                          {state, signals, equity} ->
+        |> Enum.reduce({strategy_state, [], initial_equity_state}, fn snapshot,
+                                                                       {state, signals,
+                                                                        equity_state} ->
           price_data = %{
             timestamp: snapshot.timestamp,
             yes_price: snapshot.yes_price,
@@ -190,10 +194,12 @@ defmodule PolymarketBot.Backtester do
           {signal, new_state} = config.strategy.on_price(price_data, state)
 
           # Track equity changes based on signals
-          new_equity = update_equity(equity, signal, snapshot.yes_price)
+          new_equity_state = update_equity(equity_state, signal, snapshot.yes_price)
 
-          {new_state, [{signal, price_data} | signals], new_equity}
+          {new_state, [{signal, price_data} | signals], new_equity_state}
         end)
+
+      {equity_curve, _, _, _} = equity_state
 
       # Get strategy completion stats
       strategy_stats =
@@ -231,13 +237,28 @@ defmodule PolymarketBot.Backtester do
     end
   end
 
-  defp update_equity(equity, signal, _price) do
+  defp update_equity({equity, position, entry_price, position_size}, signal, price) do
     current = List.first(equity)
 
     case signal do
-      {:buy, _} -> [current | equity]
-      {:sell, _} -> [current | equity]
-      _ -> [current | equity]
+      {:buy, size} when is_nil(position) ->
+        # Enter long position - equity stays the same, we now hold the position
+        {[current | equity], :long, price, size}
+
+      {:sell, _size} when position == :long ->
+        # Exit position, calculate realized P&L
+        pnl = (price - entry_price) / entry_price * (current * position_size)
+        new_equity = current + pnl
+        {[new_equity | equity], nil, nil, 0.0}
+
+      _ ->
+        # Hold - track unrealized P&L if in position
+        if position == :long do
+          unrealized_pnl = (price - entry_price) / entry_price * (current * position_size)
+          {[current + unrealized_pnl | equity], position, entry_price, position_size}
+        else
+          {[current | equity], position, entry_price, position_size}
+        end
     end
   end
 

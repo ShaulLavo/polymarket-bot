@@ -58,7 +58,7 @@ defmodule PolymarketBot.Backtester.Strategies.MeanReversion do
       {:hold, state}
     else
       moving_avg = Enum.sum(history) / length(history)
-      deviation = (price - moving_avg) / moving_avg
+      deviation = if moving_avg > 0, do: (price - moving_avg) / moving_avg, else: 0.0
 
       cond do
         # No position: look for entry (price below MA by threshold)

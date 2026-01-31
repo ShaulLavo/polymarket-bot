@@ -84,20 +84,16 @@ defmodule PolymarketBot.Backtester.ReportTest do
   describe "save/3" do
     test "saves report to reports directory" do
       # Use a temp directory to avoid polluting the project
-      original_cwd = File.cwd!()
-
       tmp_dir = Path.join(System.tmp_dir!(), "polymarket_test_#{:rand.uniform(10000)}")
-      File.mkdir_p!(tmp_dir)
-      File.cd!(tmp_dir)
 
       try do
-        {:ok, path} = Report.save(@sample_results, "test_backtest", format: :markdown)
+        {:ok, path} =
+          Report.save(@sample_results, "test_backtest", format: :markdown, output_dir: tmp_dir)
 
         assert File.exists?(path)
         assert String.contains?(path, "test_backtest")
         assert String.ends_with?(path, ".md")
       after
-        File.cd!(original_cwd)
         File.rm_rf!(tmp_dir)
       end
     end

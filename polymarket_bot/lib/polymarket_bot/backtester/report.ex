@@ -39,6 +39,10 @@ defmodule PolymarketBot.Backtester.Report do
 
   @doc """
   Generate and save report to the default reports directory.
+
+  Options:
+  - `:format` - Output format (default: `:markdown`)
+  - `:output_dir` - Base directory for reports (default: current working directory)
   """
   def save(results, name, opts \\ []) do
     format = opts[:format] || :markdown
@@ -48,7 +52,8 @@ defmodule PolymarketBot.Backtester.Report do
     filename = "#{name}_#{timestamp}.#{ext}"
 
     # Ensure reports directory exists
-    reports_dir = Path.join([File.cwd!(), "reports"])
+    base_dir = opts[:output_dir] || File.cwd!()
+    reports_dir = Path.join([base_dir, "reports"])
     File.mkdir_p!(reports_dir)
 
     path = Path.join(reports_dir, filename)
