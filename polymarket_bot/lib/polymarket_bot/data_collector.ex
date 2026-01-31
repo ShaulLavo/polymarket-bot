@@ -1,7 +1,7 @@
 defmodule PolymarketBot.DataCollector do
   @moduledoc """
   GenServer that periodically collects and persists Polymarket data.
-  
+
   Collects:
   - Price snapshots every minute
   - Order book snapshots every 5 minutes
@@ -13,9 +13,12 @@ defmodule PolymarketBot.DataCollector do
   alias PolymarketBot.{API, Repo}
   alias PolymarketBot.Schema.{Market, PriceSnapshot, OrderbookSnapshot}
 
-  @price_interval :timer.minutes(1)      # Collect prices every minute
-  @orderbook_interval :timer.minutes(5)  # Collect order books every 5 minutes
-  @market_interval :timer.hours(1)       # Update market metadata hourly
+  # Collect prices every minute
+  @price_interval :timer.minutes(1)
+  # Collect order books every 5 minutes
+  @orderbook_interval :timer.minutes(5)
+  # Update market metadata hourly
+  @market_interval :timer.hours(1)
 
   # ============================================================================
   # CLIENT API
@@ -40,12 +43,12 @@ defmodule PolymarketBot.DataCollector do
   @impl true
   def init(_opts) do
     Logger.info("DataCollector starting...")
-    
+
     # Schedule initial collections
     schedule_collection(:prices, 1000)
     schedule_collection(:orderbooks, 5000)
     schedule_collection(:markets, 10000)
-    
+
     state = %{
       last_price_collection: nil,
       last_orderbook_collection: nil,
@@ -55,7 +58,7 @@ defmodule PolymarketBot.DataCollector do
       market_count: 0,
       errors: []
     }
-    
+
     {:ok, state}
   end
 
@@ -110,23 +113,21 @@ defmodule PolymarketBot.DataCollector do
   defp collect_prices(state) do
     Logger.debug("Collecting price snapshots...")
     now = DateTime.utc_now() |> DateTime.truncate(:second)
-    
+
     case API.get_markets(limit: 100, active: true, closed: false) do
       {:ok, markets} ->
-        snapshots = markets
-        |> Enum.map(&build_price_snapshot(&1, now))
-        |> Enum.filter(& &1)
-        
+        snapshots =
+          markets
+          |> Enum.map(&build_price_snapshot(&1, now))
+          |> Enum.filter(& &1)
+
         # Batch insert
         {count, _} = Repo.insert_all(PriceSnapshot, snapshots, on_conflict: :nothing)
-        
+
         Logger.info("Collected #{count} price snapshots")
-        
-        %{state | 
-          last_price_collection: now,
-          price_count: state.price_count + count
-        }
-        
+
+        %{state | last_price_collection: now, price_count: state.price_count + count}
+
       {:error, reason} ->
         Logger.error("Failed to collect prices: #{inspect(reason)}")
         add_error(state, {:prices, reason, now})
@@ -136,31 +137,31 @@ defmodule PolymarketBot.DataCollector do
   defp collect_orderbooks(state) do
     Logger.debug("Collecting order book snapshots...")
     now = DateTime.utc_now() |> DateTime.truncate(:second)
-    
+
     case API.get_markets(limit: 50, active: true, closed: false) do
       {:ok, markets} ->
-        snapshots = markets
-        |> Enum.flat_map(fn market ->
-          case API.parse_token_ids(market) do
-            {:ok, {yes_token, no_token}} ->
-              [
-                fetch_orderbook_snapshot(yes_token, market["id"], now),
-                fetch_orderbook_snapshot(no_token, market["id"], now)
-              ]
-            _ -> []
-          end
-        end)
-        |> Enum.filter(& &1)
-        
+        snapshots =
+          markets
+          |> Enum.flat_map(fn market ->
+            case API.parse_token_ids(market) do
+              {:ok, {yes_token, no_token}} ->
+                [
+                  fetch_orderbook_snapshot(yes_token, market["id"], now),
+                  fetch_orderbook_snapshot(no_token, market["id"], now)
+                ]
+
+              _ ->
+                []
+            end
+          end)
+          |> Enum.filter(& &1)
+
         {count, _} = Repo.insert_all(OrderbookSnapshot, snapshots, on_conflict: :nothing)
-        
+
         Logger.info("Collected #{count} order book snapshots")
-        
-        %{state |
-          last_orderbook_collection: now,
-          orderbook_count: state.orderbook_count + count
-        }
-        
+
+        %{state | last_orderbook_collection: now, orderbook_count: state.orderbook_count + count}
+
       {:error, reason} ->
         Logger.error("Failed to collect order books: #{inspect(reason)}")
         add_error(state, {:orderbooks, reason, now})
@@ -170,20 +171,18 @@ defmodule PolymarketBot.DataCollector do
   defp collect_markets(state) do
     Logger.debug("Collecting market metadata...")
     now = DateTime.utc_now() |> DateTime.truncate(:second)
-    
+
     case API.get_markets(limit: 200, active: true, closed: false) do
       {:ok, markets} ->
-        count = markets
-        |> Enum.map(&upsert_market/1)
-        |> Enum.count(fn result -> match?({:ok, _}, result) end)
-        
+        count =
+          markets
+          |> Enum.map(&upsert_market/1)
+          |> Enum.count(fn result -> match?({:ok, _}, result) end)
+
         Logger.info("Updated #{count} markets")
-        
-        %{state |
-          last_market_collection: now,
-          market_count: count
-        }
-        
+
+        %{state | last_market_collection: now, market_count: count}
+
       {:error, reason} ->
         Logger.error("Failed to collect markets: #{inspect(reason)}")
         add_error(state, {:markets, reason, now})
@@ -212,7 +211,9 @@ defmodule PolymarketBot.DataCollector do
           inserted_at: timestamp,
           updated_at: timestamp
         }
-      _ -> nil
+
+      _ ->
+        nil
     end
   end
 
@@ -221,19 +222,21 @@ defmodule PolymarketBot.DataCollector do
       {:ok, book} ->
         bids = book["bids"] || []
         asks = book["asks"] || []
-        
-        best_bid = case bids do
-          [%{"price" => p} | _] -> parse_float(p)
-          _ -> nil
-        end
-        
-        best_ask = case asks do
-          [%{"price" => p} | _] -> parse_float(p)
-          _ -> nil
-        end
-        
+
+        best_bid =
+          case bids do
+            [%{"price" => p} | _] -> parse_float(p)
+            _ -> nil
+          end
+
+        best_ask =
+          case asks do
+            [%{"price" => p} | _] -> parse_float(p)
+            _ -> nil
+          end
+
         spread = if best_bid && best_ask, do: best_ask - best_bid, else: nil
-        
+
         %{
           token_id: token_id,
           market_id: market_id,
@@ -246,17 +249,19 @@ defmodule PolymarketBot.DataCollector do
           inserted_at: timestamp,
           updated_at: timestamp
         }
-        
-      {:error, _} -> nil
+
+      {:error, _} ->
+        nil
     end
   end
 
   defp upsert_market(market_data) do
-    {yes_token, no_token} = case API.parse_token_ids(market_data) do
-      {:ok, tokens} -> tokens
-      _ -> {nil, nil}
-    end
-    
+    {yes_token, no_token} =
+      case API.parse_token_ids(market_data) do
+        {:ok, tokens} -> tokens
+        _ -> {nil, nil}
+      end
+
     attrs = %{
       polymarket_id: market_data["id"],
       question: market_data["question"],
@@ -269,12 +274,13 @@ defmodule PolymarketBot.DataCollector do
       active: market_data["active"],
       closed: market_data["closed"]
     }
-    
+
     case Repo.get_by(Market, polymarket_id: market_data["id"]) do
-      nil -> 
+      nil ->
         %Market{}
         |> Market.changeset(attrs)
         |> Repo.insert()
+
       existing ->
         existing
         |> Market.changeset(attrs)
@@ -285,6 +291,7 @@ defmodule PolymarketBot.DataCollector do
   defp parse_float(nil), do: nil
   defp parse_float(val) when is_float(val), do: val
   defp parse_float(val) when is_integer(val), do: val * 1.0
+
   defp parse_float(val) when is_binary(val) do
     case Float.parse(val) do
       {f, _} -> f

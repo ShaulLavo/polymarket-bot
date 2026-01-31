@@ -1,6 +1,6 @@
 defmodule PolymarketBotTest do
   use ExUnit.Case
-  
+
   test "application modules are defined" do
     assert Code.ensure_loaded?(PolymarketBot)
     assert Code.ensure_loaded?(PolymarketBot.API)

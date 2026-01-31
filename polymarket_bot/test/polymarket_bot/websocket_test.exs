@@ -133,7 +133,7 @@ defmodule PolymarketBot.WebSocketTest do
 
     test "parses unix millisecond timestamp" do
       # Jan 31, 2026 12:00:00 UTC in milliseconds
-      ts = 1769860800000
+      ts = 1_769_860_800_000
       result = parse_timestamp(ts)
 
       assert %DateTime{} = result
@@ -169,6 +169,7 @@ defmodule PolymarketBot.WebSocketTest do
 
     test "creates struct with provided values" do
       now = DateTime.utc_now()
+
       state = %PolymarketBot.WebSocket{
         subscribed_markets: ["market1", "market2"],
         last_heartbeat: now,
@@ -192,48 +193,55 @@ defmodule PolymarketBot.WebSocketTest do
   # This allows testing the parsing logic without starting a WebSocket connection
 
   defp extract_price_data(%{"market" => market_id, "price" => price} = data) do
-    {:ok, %{
-      "type" => "price_update",
-      "market_id" => market_id,
-      "token_id" => Map.get(data, "token_id") || Map.get(data, "asset_id"),
-      "yes_price" => parse_price(price),
-      "no_price" => 1.0 - parse_price(price),
-      "timestamp" => Map.get(data, "timestamp") || DateTime.utc_now() |> DateTime.to_iso8601()
-    }}
+    {:ok,
+     %{
+       "type" => "price_update",
+       "market_id" => market_id,
+       "token_id" => Map.get(data, "token_id") || Map.get(data, "asset_id"),
+       "yes_price" => parse_price(price),
+       "no_price" => 1.0 - parse_price(price),
+       "timestamp" => Map.get(data, "timestamp") || DateTime.utc_now() |> DateTime.to_iso8601()
+     }}
   end
 
   defp extract_price_data(%{"asset_id" => token_id, "price" => price} = data) do
-    {:ok, %{
-      "type" => "price_update",
-      "market_id" => Map.get(data, "market_id", token_id),
-      "token_id" => token_id,
-      "yes_price" => parse_price(price),
-      "no_price" => 1.0 - parse_price(price),
-      "timestamp" => Map.get(data, "timestamp") || DateTime.utc_now() |> DateTime.to_iso8601()
-    }}
+    {:ok,
+     %{
+       "type" => "price_update",
+       "market_id" => Map.get(data, "market_id", token_id),
+       "token_id" => token_id,
+       "yes_price" => parse_price(price),
+       "no_price" => 1.0 - parse_price(price),
+       "timestamp" => Map.get(data, "timestamp") || DateTime.utc_now() |> DateTime.to_iso8601()
+     }}
   end
 
   defp extract_price_data(_), do: :ignore
 
   defp parse_price(price) when is_float(price), do: price
   defp parse_price(price) when is_integer(price), do: price / 1.0
+
   defp parse_price(price) when is_binary(price) do
     case Float.parse(price) do
       {val, _} -> val
       :error -> 0.0
     end
   end
+
   defp parse_price(_), do: 0.0
 
   defp parse_timestamp(nil), do: DateTime.utc_now()
+
   defp parse_timestamp(ts) when is_binary(ts) do
     case DateTime.from_iso8601(ts) do
       {:ok, dt, _} -> dt
       _ -> DateTime.utc_now()
     end
   end
+
   defp parse_timestamp(ts) when is_integer(ts) do
     DateTime.from_unix!(ts, :millisecond)
   end
+
   defp parse_timestamp(_), do: DateTime.utc_now()
 end

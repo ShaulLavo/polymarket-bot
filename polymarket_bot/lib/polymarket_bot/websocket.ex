@@ -37,11 +37,12 @@ defmodule PolymarketBot.WebSocket do
   end
 
   def subscribe(market_ids) when is_list(market_ids) do
-    message = Jason.encode!(%{
-      type: "subscribe",
-      channel: "market",
-      markets: market_ids
-    })
+    message =
+      Jason.encode!(%{
+        type: "subscribe",
+        channel: "market",
+        markets: market_ids
+      })
 
     WebSockex.send_frame(__MODULE__, {:text, message})
   end
@@ -54,11 +55,12 @@ defmodule PolymarketBot.WebSocket do
   end
 
   def unsubscribe(market_ids) when is_list(market_ids) do
-    message = Jason.encode!(%{
-      type: "unsubscribe",
-      channel: "market",
-      markets: market_ids
-    })
+    message =
+      Jason.encode!(%{
+        type: "unsubscribe",
+        channel: "market",
+        markets: market_ids
+      })
 
     WebSockex.send_frame(__MODULE__, {:text, message})
   end
@@ -74,11 +76,12 @@ defmodule PolymarketBot.WebSocket do
 
     # Subscribe to any pre-configured markets
     if state.subscribed_markets != [] do
-      message = Jason.encode!(%{
-        type: "subscribe",
-        channel: "market",
-        markets: state.subscribed_markets
-      })
+      message =
+        Jason.encode!(%{
+          type: "subscribe",
+          channel: "market",
+          markets: state.subscribed_markets
+        })
 
       {:reply, {:text, message}, %{state | reconnect_attempts: 0}}
     else
@@ -180,12 +183,18 @@ defmodule PolymarketBot.WebSocket do
   end
 
   # Handle Polymarket's price_change event format
-  defp handle_price_change(%{"asset_id" => asset_id, "market" => market_id, "changes" => changes, "timestamp" => ts}) do
+  defp handle_price_change(%{
+         "asset_id" => asset_id,
+         "market" => market_id,
+         "changes" => changes,
+         "timestamp" => ts
+       }) do
     # Extract the best price from changes (typically we want the most recent/relevant)
-    price = case changes do
-      [%{"price" => p} | _] -> parse_price(p)
-      _ -> nil
-    end
+    price =
+      case changes do
+        [%{"price" => p} | _] -> parse_price(p)
+        _ -> nil
+      end
 
     if price do
       timestamp = parse_timestamp(parse_timestamp_string(ts))
@@ -223,40 +232,45 @@ defmodule PolymarketBot.WebSocket do
       :error -> ts
     end
   end
+
   defp parse_timestamp_string(ts), do: ts
 
   defp extract_price_data(%{"market" => market_id, "price" => price} = data) do
-    {:ok, %{
-      "type" => "price_update",
-      "market_id" => market_id,
-      "token_id" => Map.get(data, "token_id") || Map.get(data, "asset_id"),
-      "yes_price" => parse_price(price),
-      "no_price" => 1.0 - parse_price(price),
-      "timestamp" => Map.get(data, "timestamp") || DateTime.utc_now() |> DateTime.to_iso8601()
-    }}
+    {:ok,
+     %{
+       "type" => "price_update",
+       "market_id" => market_id,
+       "token_id" => Map.get(data, "token_id") || Map.get(data, "asset_id"),
+       "yes_price" => parse_price(price),
+       "no_price" => 1.0 - parse_price(price),
+       "timestamp" => Map.get(data, "timestamp") || DateTime.utc_now() |> DateTime.to_iso8601()
+     }}
   end
 
   defp extract_price_data(%{"asset_id" => token_id, "price" => price} = data) do
-    {:ok, %{
-      "type" => "price_update",
-      "market_id" => Map.get(data, "market_id", token_id),
-      "token_id" => token_id,
-      "yes_price" => parse_price(price),
-      "no_price" => 1.0 - parse_price(price),
-      "timestamp" => Map.get(data, "timestamp") || DateTime.utc_now() |> DateTime.to_iso8601()
-    }}
+    {:ok,
+     %{
+       "type" => "price_update",
+       "market_id" => Map.get(data, "market_id", token_id),
+       "token_id" => token_id,
+       "yes_price" => parse_price(price),
+       "no_price" => 1.0 - parse_price(price),
+       "timestamp" => Map.get(data, "timestamp") || DateTime.utc_now() |> DateTime.to_iso8601()
+     }}
   end
 
   defp extract_price_data(_), do: :ignore
 
   defp parse_price(price) when is_float(price), do: price
   defp parse_price(price) when is_integer(price), do: price / 1.0
+
   defp parse_price(price) when is_binary(price) do
     case Float.parse(price) do
       {val, _} -> val
       :error -> 0.0
     end
   end
+
   defp parse_price(_), do: 0.0
 
   defp save_price_update(%{"type" => "price_update"} = data) do
@@ -286,17 +300,20 @@ defmodule PolymarketBot.WebSocket do
   defp save_price_update(_), do: :ok
 
   defp parse_timestamp(nil), do: DateTime.utc_now()
+
   defp parse_timestamp(ts) when is_binary(ts) do
     case DateTime.from_iso8601(ts) do
       {:ok, dt, _} -> dt
       _ -> DateTime.utc_now()
     end
   end
+
   defp parse_timestamp(ts) when is_integer(ts) do
     case DateTime.from_unix(ts, :millisecond) do
       {:ok, dt} -> dt
       {:error, _} -> DateTime.utc_now()
     end
   end
+
   defp parse_timestamp(_), do: DateTime.utc_now()
 end
