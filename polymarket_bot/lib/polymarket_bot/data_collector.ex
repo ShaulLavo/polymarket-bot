@@ -6,6 +6,7 @@ defmodule PolymarketBot.DataCollector do
   - Price snapshots every minute
   - Order book snapshots every 5 minutes
   - Market metadata updates every hour
+  - BTC 15-min market snapshots every 30 seconds
   """
   use GenServer
   require Logger
@@ -19,6 +20,9 @@ defmodule PolymarketBot.DataCollector do
   @orderbook_interval :timer.minutes(5)
   # Update market metadata hourly
   @market_interval :timer.hours(1)
+  # Collect BTC 15-min market every 15 seconds (for higher resolution backtesting)
+  # Polymarket allows ~1000 calls/hour, this is 240/hour - well within limits
+  @btc_15m_interval :timer.seconds(15)
 
   # ============================================================================
   # CLIENT API
@@ -48,14 +52,17 @@ defmodule PolymarketBot.DataCollector do
     schedule_collection(:prices, 1000)
     schedule_collection(:orderbooks, 5000)
     schedule_collection(:markets, 10000)
+    schedule_collection(:btc_15m, 2000)
 
     state = %{
       last_price_collection: nil,
       last_orderbook_collection: nil,
       last_market_collection: nil,
+      last_btc_15m_collection: nil,
       price_count: 0,
       orderbook_count: 0,
       market_count: 0,
+      btc_15m_count: 0,
       errors: []
     }
 
@@ -72,6 +79,7 @@ defmodule PolymarketBot.DataCollector do
     state = collect_prices(state)
     state = collect_orderbooks(state)
     state = collect_markets(state)
+    state = collect_btc_15m(state)
     {:noreply, state}
   end
 
@@ -85,6 +93,10 @@ defmodule PolymarketBot.DataCollector do
 
   def handle_cast({:collect_now, :markets}, state) do
     {:noreply, collect_markets(state)}
+  end
+
+  def handle_cast({:collect_now, :btc_15m}, state) do
+    {:noreply, collect_btc_15m(state)}
   end
 
   @impl true
@@ -103,6 +115,12 @@ defmodule PolymarketBot.DataCollector do
   def handle_info(:collect_markets, state) do
     state = collect_markets(state)
     schedule_collection(:markets, @market_interval)
+    {:noreply, state}
+  end
+
+  def handle_info(:collect_btc_15m, state) do
+    state = collect_btc_15m(state)
+    schedule_collection(:btc_15m, @btc_15m_interval)
     {:noreply, state}
   end
 
@@ -189,6 +207,50 @@ defmodule PolymarketBot.DataCollector do
     end
   end
 
+  defp collect_btc_15m(state) do
+    Logger.debug("Collecting BTC 15-min market...")
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    epoch = div(System.os_time(:second), 900) * 900
+
+    # Add small jitter to prevent synchronized requests (0-500ms)
+    jitter = :rand.uniform(500)
+    Process.sleep(jitter)
+
+    case API.get_btc_15m_event() do
+      {:ok, event} ->
+        snapshots =
+          (event["markets"] || [])
+          |> Enum.map(&build_btc_15m_snapshot(&1, epoch, now))
+          |> Enum.filter(& &1)
+
+        case snapshots do
+          [] ->
+            Logger.debug("No BTC 15-min markets found for epoch #{epoch}")
+            state
+
+          _ ->
+            {count, _} = Repo.insert_all(PriceSnapshot, snapshots, on_conflict: :nothing)
+            Logger.info("Collected #{count} BTC 15-min snapshots (epoch: #{epoch})")
+            %{state | last_btc_15m_collection: now, btc_15m_count: state.btc_15m_count + count}
+        end
+
+      {:error, {404, _}} ->
+        # Market not yet created for this epoch - this is normal
+        Logger.debug("BTC 15-min market not found for epoch #{epoch}")
+        state
+
+      {:error, {429, _}} ->
+        # Rate limited - back off by doubling the interval for next collection
+        Logger.warning("Rate limited on BTC 15-min collection, backing off")
+        # Schedule next collection with doubled interval (handled by caller)
+        add_error(state, {:btc_15m, :rate_limited, now})
+
+      {:error, reason} ->
+        Logger.error("Failed to collect BTC 15-min: #{inspect(reason)}")
+        add_error(state, {:btc_15m, reason, now})
+    end
+  end
+
   # ============================================================================
   # HELPERS
   # ============================================================================
@@ -211,6 +273,36 @@ defmodule PolymarketBot.DataCollector do
           inserted_at: timestamp,
           updated_at: timestamp
         }
+
+      _ ->
+        nil
+    end
+  end
+
+  defp build_btc_15m_snapshot(market, epoch, timestamp) do
+    prices_json = Map.get(market, "outcomePrices", "[]")
+
+    case Jason.decode(prices_json) do
+      {:ok, [up_price_str, down_price_str]} ->
+        up_price = parse_float(up_price_str)
+        down_price = parse_float(down_price_str)
+
+        if up_price && down_price do
+          # Use "btc-15m-{epoch}" as market_id for easy identification
+          %{
+            market_id: "btc-15m-#{epoch}",
+            token_id: market["conditionId"],
+            yes_price: up_price,
+            no_price: down_price,
+            volume: parse_float(market["volume"]),
+            liquidity: parse_float(market["liquidity"]),
+            timestamp: timestamp,
+            inserted_at: timestamp,
+            updated_at: timestamp
+          }
+        else
+          nil
+        end
 
       _ ->
         nil
