@@ -4,6 +4,18 @@ defmodule PolymarketBot.Web.PositionsLive do
   """
   use PolymarketBot.Web, :live_view
 
+  @trade_history_placeholder """
+  +---------------------------------------------------------+
+  |                    TRADE HISTORY                        |
+  +---------------------------------------------------------+
+  |  Connect wallet to view historical trades               |
+  |                                                         |
+  |  > Pending implementation                               |
+  |  > Will show closed positions                           |
+  |  > Realized P&L breakdown                               |
+  +---------------------------------------------------------+
+  """
+
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -189,15 +201,7 @@ defmodule PolymarketBot.Web.PositionsLive do
       <!-- Position History (placeholder) -->
       <.panel title="RECENT TRADES">
         <div class="text-center py-8 text-green-500/50">
-          <pre class="text-xs">+---------------------------------------------------------+
-|                    TRADE HISTORY                        |
-+---------------------------------------------------------+
-|  Connect wallet to view historical trades               |
-|                                                         |
-|  > Pending implementation                               |
-|  > Will show closed positions                          |
-|  > Realized P&L breakdown                              |
-+---------------------------------------------------------+</pre>
+          <pre class="text-xs"><%= trade_history_placeholder() %></pre>
         </div>
       </.panel>
 
@@ -255,6 +259,8 @@ defmodule PolymarketBot.Web.PositionsLive do
   end
 
   # Helpers
+
+  defp trade_history_placeholder, do: @trade_history_placeholder
 
   defp format_price(price), do: :erlang.float_to_binary(price, decimals: 4)
 

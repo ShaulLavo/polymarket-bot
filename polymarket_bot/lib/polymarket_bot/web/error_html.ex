@@ -3,6 +3,15 @@ defmodule PolymarketBot.ErrorHTML do
   Terminal-style error pages.
   """
 
+  @ascii_error ~S"""
+  ███████╗██████╗ ██████╗  ██████╗ ██████╗
+  ██╔════╝██╔══██╗██╔══██╗██╔═══██╗██╔══██╗
+  █████╗  ██████╔╝██████╔╝██║   ██║██████╔╝
+  ██╔══╝  ██╔══██╗██╔══██╗██║   ██║██╔══██╗
+  ███████╗██║  ██║██║  ██║╚██████╔╝██║  ██║
+  ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝
+  """
+
   def render(template, _assigns) do
     error_code = template |> String.replace(".html", "")
 
@@ -47,12 +56,7 @@ defmodule PolymarketBot.ErrorHTML do
     </head>
     <body>
       <div class="container">
-        <pre>███████╗██████╗ ██████╗  ██████╗ ██████╗
-██╔════╝██╔══██╗██╔══██╗██╔═══██╗██╔══██╗
-█████╗  ██████╔╝██████╔╝██║   ██║██████╔╝
-██╔══╝  ██╔══██╗██╔══██╗██║   ██║██╔══██╗
-███████╗██║  ██║██║  ██║╚██████╔╝██║  ██║
-╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝</pre>
+        <pre>#{@ascii_error}</pre>
         <div class="code">#{error_code}</div>
         <div class="message">[SYSTEM ERROR] Request could not be processed</div>
         <div style="margin-top: 30px;">
