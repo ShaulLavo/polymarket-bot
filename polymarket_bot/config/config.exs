@@ -40,5 +40,22 @@ config :tailwind,
     cd: Path.expand("../assets", __DIR__)
   ]
 
+# TA Signals Strategy Configuration
+config :polymarket_bot, :ta_signals,
+  vwap_slope_lookback: 5,
+  rsi_period: 14,
+  macd_fast: 12,
+  macd_slow: 26,
+  macd_signal: 9,
+  candle_window_minutes: 15
+
+# Binance API Configuration
+config :polymarket_bot, :binance,
+  base_url: "https://api.binance.com",
+  default_symbol: "BTCUSDT"
+
+# Chainlink WebSocket Configuration
+config :polymarket_bot, :chainlink_ws, url: "wss://ws-live-data.polymarket.com"
+
 # Import environment specific config
 import_config "#{config_env()}.exs"
