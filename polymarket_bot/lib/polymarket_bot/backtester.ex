@@ -226,7 +226,7 @@ defmodule PolymarketBot.Backtester do
         end_date: List.last(data).timestamp,
         data_points: length(data),
         initial_capital: config.initial_capital,
-        final_capital: List.last(equity_curve),
+        final_capital: List.first(equity_curve),
         metrics: metrics,
         trades: trades,
         equity_curve: Enum.reverse(equity_curve),
