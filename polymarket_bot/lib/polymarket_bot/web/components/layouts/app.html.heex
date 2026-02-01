@@ -1,0 +1,41 @@
+<main class="min-h-screen p-4">
+  <!-- Terminal Header with ASCII Art -->
+  <header class="mb-6 border border-green-500/30 bg-black/50 p-4">
+    <pre class="text-green-400 text-xs leading-tight">
+ ██████╗  ██████╗ ██╗  ██╗   ██╗███╗   ███╗ █████╗ ██████╗ ██╗  ██╗███████╗████████╗
+ ██╔══██╗██╔═══██╗██║  ╚██╗ ██╔╝████╗ ████║██╔══██╗██╔══██╗██║ ██╔╝██╔════╝╚══██╔══╝
+ ██████╔╝██║   ██║██║   ╚████╔╝ ██╔████╔██║███████║██████╔╝█████╔╝ █████╗     ██║
+ ██╔═══╝ ██║   ██║██║    ╚██╔╝  ██║╚██╔╝██║██╔══██║██╔══██╗██╔═██╗ ██╔══╝     ██║
+ ██║     ╚██████╔╝███████╗██║   ██║ ╚═╝ ██║██║  ██║██║  ██║██║  ██╗███████╗   ██║
+ ╚═╝      ╚═════╝ ╚══════╝╚═╝   ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝
+    </pre>
+    <div class="flex items-center justify-between mt-2 text-xs">
+      <div class="flex items-center gap-4">
+        <span class="text-amber-400">[TRADING TERMINAL v0.1.0]</span>
+        <span class="text-green-500 animate-pulse">● ONLINE</span>
+      </div>
+      <div class="flex items-center gap-4 text-green-500/70">
+        <span>UTC: <%= DateTime.utc_now() |> Calendar.strftime("%Y-%m-%d %H:%M:%S") %></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="mb-6 flex gap-4 border-b border-green-500/30 pb-2">
+    <.link navigate={~p"/"} class="hover:text-amber-400 transition-colors px-2 py-1 border border-transparent hover:border-amber-400/50">
+      [DASHBOARD]
+    </.link>
+    <.link navigate={~p"/positions"} class="hover:text-amber-400 transition-colors px-2 py-1 border border-transparent hover:border-amber-400/50">
+      [POSITIONS]
+    </.link>
+    <.link navigate={~p"/backtest"} class="hover:text-amber-400 transition-colors px-2 py-1 border border-transparent hover:border-amber-400/50">
+      [BACKTEST]
+    </.link>
+  </nav>
+
+  <!-- Flash messages -->
+  <.flash_group flash={@flash} />
+
+  <!-- Main content -->
+  <%= @inner_content %>
+</main>

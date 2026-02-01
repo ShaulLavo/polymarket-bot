@@ -1,18 +1,11 @@
 defmodule PolymarketBot do
   @moduledoc """
-  Documentation for `PolymarketBot`.
+  Polymarket Trading Bot - Real-time market data and backtesting.
   """
 
   @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> PolymarketBot.hello()
-      :world
-
+  Returns the static paths for the Phoenix endpoint.
   """
-  def hello do
-    :world
-  end
+  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
 end
+

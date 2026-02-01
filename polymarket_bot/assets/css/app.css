@@ -1,0 +1,206 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* Terminal/Hacker Theme Base Styles */
+:root {
+  --terminal-green: #00ff00;
+  --terminal-green-dim: rgba(0, 255, 0, 0.7);
+  --terminal-green-dark: rgba(0, 255, 0, 0.3);
+  --terminal-amber: #ffd93d;
+  --terminal-red: #ff6b6b;
+  --terminal-bg: #000000;
+}
+
+/* CRT Monitor Effect */
+@keyframes flicker {
+  0% { opacity: 0.97; }
+  5% { opacity: 0.95; }
+  10% { opacity: 0.97; }
+  15% { opacity: 0.94; }
+  20% { opacity: 0.98; }
+  25% { opacity: 0.96; }
+  30% { opacity: 0.97; }
+  35% { opacity: 0.95; }
+  40% { opacity: 0.98; }
+  45% { opacity: 0.96; }
+  50% { opacity: 0.97; }
+  55% { opacity: 0.95; }
+  60% { opacity: 0.98; }
+  65% { opacity: 0.96; }
+  70% { opacity: 0.97; }
+  75% { opacity: 0.94; }
+  80% { opacity: 0.98; }
+  85% { opacity: 0.96; }
+  90% { opacity: 0.97; }
+  95% { opacity: 0.95; }
+  100% { opacity: 0.98; }
+}
+
+body {
+  animation: flicker 0.15s infinite;
+}
+
+/* Text Glow Effect */
+.text-glow {
+  text-shadow: 0 0 5px var(--terminal-green),
+               0 0 10px var(--terminal-green),
+               0 0 15px var(--terminal-green);
+}
+
+.text-glow-amber {
+  text-shadow: 0 0 5px var(--terminal-amber),
+               0 0 10px var(--terminal-amber);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 255, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 0, 0.3);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 0, 0.5);
+}
+
+/* Selection */
+::selection {
+  background: rgba(0, 255, 0, 0.3);
+  color: #00ff00;
+}
+
+/* Custom Terminal Components */
+.terminal-border {
+  border: 1px solid rgba(0, 255, 0, 0.3);
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.1) inset,
+              0 0 20px rgba(0, 255, 0, 0.05);
+}
+
+.terminal-header {
+  background: linear-gradient(180deg, rgba(0, 255, 0, 0.15) 0%, rgba(0, 255, 0, 0.05) 100%);
+  border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+/* Blinking Cursor */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.cursor-blink {
+  animation: blink 1s infinite;
+}
+
+/* ASCII Art Styling */
+pre {
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+/* Table hover effects */
+tr:hover {
+  background: rgba(0, 255, 0, 0.05);
+}
+
+/* Input focus states */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(0, 255, 0, 0.5),
+              0 0 10px rgba(0, 255, 0, 0.2);
+}
+
+/* Button hover animation */
+button:not(:disabled):hover {
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3),
+              0 0 20px rgba(0, 255, 0, 0.1);
+}
+
+/* Loading animation */
+@keyframes loading-dots {
+  0% { content: '.'; }
+  33% { content: '..'; }
+  66% { content: '...'; }
+}
+
+.loading::after {
+  content: '.';
+  animation: loading-dots 1.5s infinite;
+}
+
+/* Panel animations */
+.panel-enter {
+  animation: panel-fade-in 0.3s ease-out;
+}
+
+@keyframes panel-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Chart styling */
+.chart-container {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 19px,
+    rgba(0, 255, 0, 0.05) 19px,
+    rgba(0, 255, 0, 0.05) 20px
+  );
+}
+
+/* LiveView specific animations */
+.phx-click-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.phx-submit-loading .phx-submit-loading-indicator {
+  display: inline-block;
+}
+
+.phx-no-feedback.phx-submit-loading .phx-submit-loading-indicator {
+  display: none;
+}
+
+/* Flash message animations */
+.phx-flash {
+  animation: flash-in 0.3s ease-out;
+}
+
+@keyframes flash-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  pre {
+    font-size: 0.5rem;
+    overflow-x: auto;
+  }
+
+  .ascii-header {
+    display: none;
+  }
+}
