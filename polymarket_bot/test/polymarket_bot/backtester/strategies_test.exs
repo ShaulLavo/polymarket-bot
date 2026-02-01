@@ -225,11 +225,28 @@ defmodule PolymarketBot.Backtester.StrategiesTest do
 
       # Add some positions manually
       positions = [
-        %{yes_price: 0.48, no_price: 0.49, total_cost: 0.97, spread: 0.03, entry_timestamp: DateTime.utc_now()},
-        %{yes_price: 0.45, no_price: 0.50, total_cost: 0.95, spread: 0.05, entry_timestamp: DateTime.utc_now()}
+        %{
+          yes_price: 0.48,
+          no_price: 0.49,
+          total_cost: 0.97,
+          spread: 0.03,
+          entry_timestamp: DateTime.utc_now()
+        },
+        %{
+          yes_price: 0.45,
+          no_price: 0.50,
+          total_cost: 0.95,
+          spread: 0.05,
+          entry_timestamp: DateTime.utc_now()
+        }
       ]
 
-      state = %{state | positions: positions, spreads_captured: [0.03, 0.05], opportunities_found: 2}
+      state = %{
+        state
+        | positions: positions,
+          spreads_captured: [0.03, 0.05],
+          opportunities_found: 2
+      }
 
       {:ok, stats} = GabagoolArb.on_complete(state)
 

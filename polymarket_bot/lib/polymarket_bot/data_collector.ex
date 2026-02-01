@@ -20,8 +20,9 @@ defmodule PolymarketBot.DataCollector do
   @orderbook_interval :timer.minutes(5)
   # Update market metadata hourly
   @market_interval :timer.hours(1)
-  # Collect BTC 15-min market every 30 seconds
-  @btc_15m_interval :timer.seconds(30)
+  # Collect BTC 15-min market every 15 seconds (for higher resolution backtesting)
+  # Polymarket allows ~1000 calls/hour, this is 240/hour - well within limits
+  @btc_15m_interval :timer.seconds(15)
 
   # ============================================================================
   # CLIENT API
@@ -211,6 +212,10 @@ defmodule PolymarketBot.DataCollector do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
     epoch = div(System.os_time(:second), 900) * 900
 
+    # Add small jitter to prevent synchronized requests (0-500ms)
+    jitter = :rand.uniform(500)
+    Process.sleep(jitter)
+
     case API.get_btc_15m_event() do
       {:ok, event} ->
         snapshots =
@@ -233,6 +238,12 @@ defmodule PolymarketBot.DataCollector do
         # Market not yet created for this epoch - this is normal
         Logger.debug("BTC 15-min market not found for epoch #{epoch}")
         state
+
+      {:error, {429, _}} ->
+        # Rate limited - back off by doubling the interval for next collection
+        Logger.warning("Rate limited on BTC 15-min collection, backing off")
+        # Schedule next collection with doubled interval (handled by caller)
+        add_error(state, {:btc_15m, :rate_limited, now})
 
       {:error, reason} ->
         Logger.error("Failed to collect BTC 15-min: #{inspect(reason)}")
