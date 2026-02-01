@@ -175,8 +175,8 @@ defmodule PolymarketBot.Backtester do
     # Initialize strategy
     with {:ok, strategy_state} <- config.strategy.init(config.strategy_config) do
       # Run through all price data
-      # equity_state: {equity_list, position, entry_price, position_size}
-      initial_equity_state = {[config.initial_capital], nil, nil, 0.0}
+      # equity_state: {equity_list, position, entry_price, position_size, capital_at_entry}
+      initial_equity_state = {[config.initial_capital], nil, nil, 0.0, nil}
 
       {final_state, signals, equity_state} =
         data
@@ -199,7 +199,7 @@ defmodule PolymarketBot.Backtester do
           {new_state, [{signal, price_data} | signals], new_equity_state}
         end)
 
-      {equity_curve, _, _, _} = equity_state
+      {equity_curve, _, _, _, _} = equity_state
 
       # Get strategy completion stats
       strategy_stats =
@@ -237,27 +237,27 @@ defmodule PolymarketBot.Backtester do
     end
   end
 
-  defp update_equity({equity, position, entry_price, position_size}, signal, price) do
+  defp update_equity({equity, position, entry_price, position_size, capital_at_entry}, signal, price) do
     current = List.first(equity)
 
     case signal do
       {:buy, size} when is_nil(position) ->
-        # Enter long position - equity stays the same, we now hold the position
-        {[current | equity], :long, price, size}
+        # Enter long position - store capital at entry for accurate P&L calculations
+        {[current | equity], :long, price, size, current}
 
       {:sell, _size} when position == :long ->
-        # Exit position, calculate realized P&L
-        pnl = (price - entry_price) / entry_price * (current * position_size)
-        new_equity = current + pnl
-        {[new_equity | equity], nil, nil, 0.0}
+        # Exit position, calculate realized P&L based on capital at entry
+        pnl = (price - entry_price) / entry_price * (capital_at_entry * position_size)
+        new_equity = capital_at_entry + pnl
+        {[new_equity | equity], nil, nil, 0.0, nil}
 
       _ ->
         # Hold - track unrealized P&L if in position
         if position == :long do
-          unrealized_pnl = (price - entry_price) / entry_price * (current * position_size)
-          {[current + unrealized_pnl | equity], position, entry_price, position_size}
+          unrealized_pnl = (price - entry_price) / entry_price * (capital_at_entry * position_size)
+          {[capital_at_entry + unrealized_pnl | equity], position, entry_price, position_size, capital_at_entry}
         else
-          {[current | equity], position, entry_price, position_size}
+          {[current | equity], position, entry_price, position_size, capital_at_entry}
         end
     end
   end
