@@ -8,7 +8,9 @@ defmodule PolymarketBot.Application do
     children =
       [
         # Database (always started)
-        PolymarketBot.Repo
+        PolymarketBot.Repo,
+        # PubSub for LiveView
+        {Phoenix.PubSub, name: PolymarketBot.PubSub}
       ]
       |> maybe_add_child(
         :start_data_collector,
@@ -20,7 +22,7 @@ defmodule PolymarketBot.Application do
       )
       |> maybe_add_child(
         :start_http_server,
-        {Plug.Cowboy, scheme: :http, plug: PolymarketBot.Router, options: [port: 4000]}
+        PolymarketBot.Endpoint
       )
 
     opts = [strategy: :one_for_one, name: PolymarketBot.Supervisor]
