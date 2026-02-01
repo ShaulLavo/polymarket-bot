@@ -11,8 +11,8 @@ defmodule PolymarketBot.Web.CoreComponents do
   @doc """
   Renders flash messages in terminal style.
   """
-  attr :flash, :map, required: true
-  attr :kind, :atom, values: [:info, :error], doc: "flash message type"
+  attr(:flash, :map, required: true)
+  attr(:kind, :atom, values: [:info, :error], doc: "flash message type")
 
   def flash(assigns) do
     ~H"""
@@ -39,7 +39,7 @@ defmodule PolymarketBot.Web.CoreComponents do
   @doc """
   Shows the flash group with all flash messages.
   """
-  attr :flash, :map, required: true
+  attr(:flash, :map, required: true)
 
   def flash_group(assigns) do
     ~H"""
@@ -51,9 +51,9 @@ defmodule PolymarketBot.Web.CoreComponents do
   @doc """
   Terminal-style panel/box component.
   """
-  attr :title, :string, default: nil
-  attr :class, :string, default: ""
-  slot :inner_block, required: true
+  attr(:title, :string, default: nil)
+  attr(:class, :string, default: "")
+  slot(:inner_block, required: true)
 
   def panel(assigns) do
     ~H"""
@@ -71,10 +71,10 @@ defmodule PolymarketBot.Web.CoreComponents do
   @doc """
   Terminal-style button.
   """
-  attr :type, :string, default: "button"
-  attr :class, :string, default: ""
-  attr :rest, :global, include: ~w(disabled form name value)
-  slot :inner_block, required: true
+  attr(:type, :string, default: "button")
+  attr(:class, :string, default: "")
+  attr(:rest, :global, include: ~w(disabled form name value))
+  slot(:inner_block, required: true)
 
   def button(assigns) do
     ~H"""
@@ -97,13 +97,17 @@ defmodule PolymarketBot.Web.CoreComponents do
   @doc """
   Terminal-style input field.
   """
-  attr :id, :any, default: nil
-  attr :name, :any
-  attr :label, :string, default: nil
-  attr :value, :any
-  attr :type, :string, default: "text"
-  attr :class, :string, default: ""
-  attr :rest, :global, include: ~w(autocomplete disabled form max maxlength min minlength pattern placeholder readonly required size step)
+  attr(:id, :any, default: nil)
+  attr(:name, :any)
+  attr(:label, :string, default: nil)
+  attr(:value, :any)
+  attr(:type, :string, default: "text")
+  attr(:class, :string, default: "")
+
+  attr(:rest, :global,
+    include:
+      ~w(autocomplete disabled form max maxlength min minlength pattern placeholder readonly required size step)
+  )
 
   def input(assigns) do
     ~H"""
@@ -131,13 +135,13 @@ defmodule PolymarketBot.Web.CoreComponents do
   @doc """
   Terminal-style select dropdown.
   """
-  attr :id, :any, default: nil
-  attr :name, :any
-  attr :label, :string, default: nil
-  attr :options, :list, required: true
-  attr :value, :any
-  attr :class, :string, default: ""
-  attr :rest, :global, include: ~w(disabled form required)
+  attr(:id, :any, default: nil)
+  attr(:name, :any)
+  attr(:label, :string, default: nil)
+  attr(:options, :list, required: true)
+  attr(:value, :any)
+  attr(:class, :string, default: "")
+  attr(:rest, :global, include: ~w(disabled form required))
 
   def select(assigns) do
     ~H"""
@@ -167,10 +171,10 @@ defmodule PolymarketBot.Web.CoreComponents do
   @doc """
   Stat display box with label and value.
   """
-  attr :label, :string, required: true
-  attr :value, :string, required: true
-  attr :trend, :atom, default: nil, values: [nil, :up, :down]
-  attr :class, :string, default: ""
+  attr(:label, :string, required: true)
+  attr(:value, :string, required: true)
+  attr(:trend, :atom, default: nil, values: [nil, :up, :down])
+  attr(:class, :string, default: "")
 
   def stat(assigns) do
     ~H"""
@@ -202,9 +206,9 @@ defmodule PolymarketBot.Web.CoreComponents do
   @doc """
   Progress bar in terminal style.
   """
-  attr :value, :integer, required: true
-  attr :max, :integer, default: 100
-  attr :class, :string, default: ""
+  attr(:value, :integer, required: true)
+  attr(:max, :integer, default: 100)
+  attr(:class, :string, default: "")
 
   def progress(assigns) do
     pct = min(100, max(0, round(assigns.value / assigns.max * 100)))
@@ -225,6 +229,9 @@ defmodule PolymarketBot.Web.CoreComponents do
   end
 
   defp hide(js, selector) do
-    JS.hide(js, to: selector, transition: {"transition-opacity duration-200", "opacity-100", "opacity-0"})
+    JS.hide(js,
+      to: selector,
+      transition: {"transition-opacity duration-200", "opacity-100", "opacity-0"}
+    )
   end
 end

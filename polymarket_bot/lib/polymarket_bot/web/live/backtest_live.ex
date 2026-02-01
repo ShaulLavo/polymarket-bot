@@ -82,17 +82,17 @@ defmodule PolymarketBot.Web.BacktestLive do
     ]
 
     case Backtester.run(backtest_opts) do
-        {:ok, results} ->
-          equity_curve = results[:equity_curve] || []
+      {:ok, results} ->
+        equity_curve = results[:equity_curve] || []
 
-          {:noreply,
-           socket
-           |> assign(:running, false)
-           |> assign(:progress, 100)
-           |> assign(:results, results)
-           |> assign(:equity_curve, equity_curve)}
+        {:noreply,
+         socket
+         |> assign(:running, false)
+         |> assign(:progress, 100)
+         |> assign(:results, results)
+         |> assign(:equity_curve, equity_curve)}
 
-        {:error, reason} ->
+      {:error, reason} ->
         {:noreply,
          socket
          |> assign(:running, false)
@@ -103,11 +103,12 @@ defmodule PolymarketBot.Web.BacktestLive do
   defp load_available_markets do
     # Get unique market IDs from price snapshots
     query =
-      from p in PriceSnapshot,
+      from(p in PriceSnapshot,
         select: p.market_id,
         distinct: true,
         order_by: [desc: p.timestamp],
         limit: 50
+      )
 
     Repo.all(query)
     |> Enum.map(fn id -> {truncate_id(id), id} end)
@@ -149,7 +150,9 @@ defmodule PolymarketBot.Web.BacktestLive do
 
   defp parse_config_value(value) do
     case Float.parse(value) do
-      {f, ""} -> f
+      {f, ""} ->
+        f
+
       _ ->
         case Integer.parse(value) do
           {i, ""} -> i
@@ -336,7 +339,9 @@ defmodule PolymarketBot.Web.BacktestLive do
   # Helpers
 
   defp format_pct(nil), do: "--%"
-  defp format_pct(pct) when is_number(pct), do: "#{:erlang.float_to_binary(pct * 1.0, decimals: 2)}%"
+
+  defp format_pct(pct) when is_number(pct),
+    do: "#{:erlang.float_to_binary(pct * 1.0, decimals: 2)}%"
 
   defp format_decimal(nil), do: "0.00"
   defp format_decimal(num), do: :erlang.float_to_binary(num * 1.0, decimals: 4)
@@ -366,7 +371,7 @@ defmodule PolymarketBot.Web.BacktestLive do
 
     lines =
       for row <- (height - 1)..0 do
-        threshold = min_val + (range * (row / height))
+        threshold = min_val + range * (row / height)
         label = :erlang.float_to_binary(threshold, decimals: 0) |> String.pad_leading(8)
 
         chars =
@@ -380,7 +385,11 @@ defmodule PolymarketBot.Web.BacktestLive do
       end
 
     x_axis = "         +" <> String.duplicate("-", length(values))
-    time_label = "         " <> String.pad_leading("START", div(length(values), 2)) <> String.pad_leading("END", div(length(values), 2))
+
+    time_label =
+      "         " <>
+        String.pad_leading("START", div(length(values), 2)) <>
+        String.pad_leading("END", div(length(values), 2))
 
     Enum.join(lines ++ [x_axis, time_label], "\n")
   end

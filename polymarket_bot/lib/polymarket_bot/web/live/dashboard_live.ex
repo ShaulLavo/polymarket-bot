@@ -307,7 +307,9 @@ defmodule PolymarketBot.Web.DashboardLive do
   defp format_pct(nil), do: "--%"
   defp format_pct(pct), do: "#{:erlang.float_to_binary(pct * 100, decimals: 2)}%"
 
-  defp format_currency(amount) when amount >= 0, do: "$#{:erlang.float_to_binary(amount, decimals: 2)}"
+  defp format_currency(amount) when amount >= 0,
+    do: "$#{:erlang.float_to_binary(amount, decimals: 2)}"
+
   defp format_currency(amount), do: "-$#{:erlang.float_to_binary(abs(amount), decimals: 2)}"
 
   defp format_time(nil), do: "--:--:--"

@@ -4,5 +4,5 @@ defmodule PolymarketBot.Web.Layouts do
   """
   use PolymarketBot.Web, :html
 
-  embed_templates "layouts/*"
+  embed_templates("layouts/*")
 end
