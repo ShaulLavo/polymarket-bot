@@ -6,7 +6,7 @@ defmodule PolymarketBot.DataCollector do
   - Price snapshots every minute
   - Order book snapshots every 5 minutes
   - Market metadata updates every hour
-  - BTC 15-min market snapshots every 30 seconds
+  - BTC 15-min market snapshots every 10 seconds
   """
   use GenServer
   require Logger
@@ -20,9 +20,9 @@ defmodule PolymarketBot.DataCollector do
   @orderbook_interval :timer.minutes(5)
   # Update market metadata hourly
   @market_interval :timer.hours(1)
-  # Collect BTC 15-min market every 15 seconds (for higher resolution backtesting)
-  # Polymarket allows ~1000 calls/hour, this is 240/hour - well within limits
-  @btc_15m_interval :timer.seconds(15)
+  # Collect BTC 15-min market every 10 seconds (for higher resolution backtesting)
+  # Polymarket allows ~1000 calls/hour, this is 360/hour - well within limits
+  @btc_15m_interval :timer.seconds(10)
 
   # ============================================================================
   # CLIENT API
