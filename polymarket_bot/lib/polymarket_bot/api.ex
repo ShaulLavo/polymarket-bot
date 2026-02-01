@@ -8,6 +8,7 @@ defmodule PolymarketBot.API do
 
   @gamma_url "https://gamma-api.polymarket.com"
   @clob_url "https://clob.polymarket.com"
+  @user_agent "PolymarketBot/1.0"
 
   # ============================================================================
   # GAMMA API - Market Discovery & Metadata
@@ -67,6 +68,28 @@ defmodule PolymarketBot.API do
   """
   def get_event(event_id) do
     case Req.get("#{@gamma_url}/events/#{event_id}") do
+      {:ok, %{status: 200, body: body}} -> {:ok, body}
+      {:ok, %{status: status, body: body}} -> {:error, {status, body}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Fetch the current BTC 15-minute up/down event.
+
+  The epoch is the current unix timestamp rounded down to 15-minute intervals.
+  Requires User-Agent header to avoid 403.
+
+  ## Response Structure
+    * `markets[0].conditionId` - market identifier
+    * `markets[0].outcomePrices` - "[Up_price, Down_price]" as JSON string
+    * `markets[0].clobTokenIds` - token IDs for trading
+  """
+  def get_btc_15m_event do
+    epoch = div(System.os_time(:second), 900) * 900
+    url = "#{@gamma_url}/events/slug/btc-updown-15m-#{epoch}"
+
+    case Req.get(url, headers: [{"user-agent", @user_agent}]) do
       {:ok, %{status: 200, body: body}} -> {:ok, body}
       {:ok, %{status: status, body: body}} -> {:error, {status, body}}
       {:error, reason} -> {:error, reason}
