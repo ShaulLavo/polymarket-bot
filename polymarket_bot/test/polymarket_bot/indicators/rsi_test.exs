@@ -17,7 +17,7 @@ defmodule PolymarketBot.Indicators.RSITest do
 
     test "returns 0 when all losses (no gains)" do
       # 15 prices with only losses
-      prices = Enum.to_list(15..1) |> Enum.map(&(&1 * 1.0))
+      prices = Enum.to_list(15..1//-1) |> Enum.map(&(&1 * 1.0))
       assert RSI.compute_rsi(prices, 14) == 0.0
     end
 

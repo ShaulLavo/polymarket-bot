@@ -82,7 +82,7 @@ defmodule PolymarketBot.Indicators.MACDTest do
 
     test "negative trend produces negative MACD line" do
       # Steadily decreasing prices
-      prices = Enum.to_list(50..1) |> Enum.map(&(&1 * 1.0))
+      prices = Enum.to_list(50..1//-1) |> Enum.map(&(&1 * 1.0))
       result = MACD.compute_macd(prices, 12, 26, 9)
 
       # Fast EMA should be lower than slow EMA in downtrend

@@ -9,16 +9,17 @@ defmodule PolymarketBot.Data.ChainlinkWSTest do
 
   describe "module structure" do
     test "defines start_link/1" do
+      Code.ensure_loaded!(ChainlinkWS)
       assert function_exported?(ChainlinkWS, :start_link, 1)
     end
 
     test "defines get_last_price/1" do
+      Code.ensure_loaded!(ChainlinkWS)
       assert function_exported?(ChainlinkWS, :get_last_price, 1)
     end
 
-    @tag :skip
-    # TODO: WebSockex may be wrapping functions differently
     test "defines subscribe/1" do
+      Code.ensure_loaded!(ChainlinkWS)
       assert function_exported?(ChainlinkWS, :subscribe, 1)
     end
   end
@@ -32,7 +33,6 @@ defmodule PolymarketBot.Data.ChainlinkWSTest do
   end
 
   # Integration test - requires actual WebSocket connection
-  @tag :external
   describe "websocket connection" do
     @tag :external
     test "can start and receive price updates" do

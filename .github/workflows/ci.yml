@@ -38,7 +38,7 @@ jobs:
       
       - name: Run tests
         working-directory: polymarket_bot
-        run: mix test
+        run: mix test --exclude external
       
       - name: Check formatting
         working-directory: polymarket_bot
